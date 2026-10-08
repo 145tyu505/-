@@ -2,269 +2,454 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>玉山クイズ (玉山快問快答)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>九份老街 互動導覽遊戲</title>
     <style>
+        /* 基礎設定與手機適配 */
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
         body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #e0f2fe, #bfdbfe);
+            font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+            background-color: #2c2c2c;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            color: #333;
         }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            max-width: 600px;
+        #app-container {
             width: 100%;
-        }
-        h1 {
-            color: #1e3a8a;
-            text-align: center;
-            margin-bottom: 10px;
-        }
-        .subtitle {
-            text-align: center;
-            color: #64748b;
-            font-size: 14px;
-            margin-bottom: 25px;
-        }
-        .question-box {
-            font-size: 18px;
-            font-weight: bold;
-            color: #334155;
-            margin-bottom: 20px;
-            line-height: 1.4;
-        }
-        .options {
+            max-width: 450px;
+            background-color: #fffaf0;
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
-            gap: 12px;
+        }
+        
+        /* 標題與紅燈籠風格 */
+        header {
+            background-color: #c53030;
+            color: white;
+            text-align: center;
+            padding: 20px 10px;
+            font-size: 24px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-bottom: 4px solid #9b2c2c;
+        }
+        
+        .content {
+            padding: 25px 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* 動畫效果 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pop {
+            0% { transform: scale(0.95); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        /* 圖片與視覺 */
+        .hero-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* 文字樣式 */
+        h2 {
+            font-size: 22px;
+            color: #2d3748;
+            margin-bottom: 15px;
+            text-align: center;
+            line-height: 1.4;
+        }
+        p {
+            font-size: 18px;
+            line-height: 1.6;
+            color: #4a5568;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        ruby {
+            font-family: inherit;
+        }
+        rt {
+            font-size: 11px;
+            color: #718096;
+        }
+
+        /* 按鈕樣式 (大面積、易點擊) */
+        button {
+            width: 100%;
+            background-color: #f6e05e;
+            color: #744210;
+            border: 2px solid #d69e2e;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        button:active {
+            transform: scale(0.98);
+            background-color: #ecc94b;
+        }
+        .btn-start {
+            background-color: #e53e3e;
+            color: white;
+            border-color: #c53030;
+            font-size: 22px;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 50px;
+        }
+        .btn-start:active {
+            background-color: #c53030;
+        }
+
+        /* 選項按鈕狀態 */
+        .option-btn {
+            background-color: white;
+            color: #2d3748;
+            border: 2px solid #cbd5e1;
+            text-align: left;
+            display: flex;
+            align-items: center;
+        }
+        .option-btn .badge {
+            background: #e2e8f0;
+            color: #4a5568;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 15px;
+            font-size: 14px;
+        }
+        .option-btn.correct {
+            background-color: #c6f6d5 !important;
+            border-color: #48bb78 !important;
+            color: #22543d;
+            animation: pop 0.3s;
+        }
+        .option-btn.wrong {
+            background-color: #fed7d7 !important;
+            border-color: #f56565 !important;
+            color: #742a2a;
+            animation: shake 0.3s;
+        }
+
+        /* 狀態列 */
+        .status-bar {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 16px;
+            color: #718096;
+            font-weight: bold;
+        }
+        
+        /* 浮層回饋 */
+        #feedback-modal {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+            text-align: center;
+        }
+        #feedback-modal.show {
+            transform: translateY(0);
+        }
+        .feedback-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .feedback-desc {
+            font-size: 16px;
+            color: #4a5568;
             margin-bottom: 20px;
         }
-        button.option-btn {
-            background: #f8fafc;
-            border: 2px solid #cbd5e1;
-            padding: 12px 18px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            text-align: left;
-            transition: all 0.2s;
-        }
-        button.option-btn:hover:not(:disabled) {
-            background: #eff6ff;
-            border-color: #3b82f6;
-        }
-        button.option-btn.correct {
-            background: #dcfce7 !important;
-            border-color: #22c55e !important;
-            color: #166534;
-        }
-        button.option-btn.wrong {
-            background: #fee2e2 !important;
-            border-color: #ef4444 !important;
-            color: #991b1b;
-        }
-        .feedback {
-            font-weight: bold;
-            margin-bottom: 15px;
-            min-height: 48px;
-        }
-        .next-btn {
-            background: #3b82f6;
+        .btn-next {
+            background-color: #4299e1;
             color: white;
-            border: none;
-            padding: 12px 20px;
-            font-size: 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            display: none;
-            width: 100%;
-            font-weight: bold;
-        }
-        .next-btn:hover {
-            background: #2563eb;
-        }
-        .score-board {
-            text-align: center;
-            font-size: 22px;
-            color: #1e3a8a;
-            font-weight: bold;
+            border-color: #3182ce;
         }
     </style>
 </head>
 <body>
 
-<div class="container" id="app">
-    <h1>玉山クイズ</h1>
-    <div class="subtitle">台湾の最高峰・玉山に関する日本語クイズゲーム（全10問）</div>
-    
-    <div id="quiz-container">
-        <div id="progress" style="margin-bottom: 10px; color: #64748b; font-size: 14px;"></div>
-        <div class="question-box" id="question-text"></div>
-        <div class="options" id="options-container"></div>
-        <div class="feedback" id="feedback-text"></div>
-        <button class="next-btn" id="next-btn" onclick="nextQuestion()">次の問題へ (下一題)</button>
+<div id="app-container">
+    <header>🏮 九份老街ツアー 🏮</header>
+
+    <div class="content">
+        <!-- 開始畫面 -->
+        <div id="screen-start" class="screen active">
+            <div class="hero-icon">🏮🍵✨</div>
+            <h2><ruby>台湾<rt>たいわん</rt></ruby>の<ruby>魅力<rt>みりょく</rt></ruby>を<ruby>発見<rt>はっけん</rt></ruby>しよう！</h2>
+            <p>九份（きゅうふん）に関する日本語クイズに挑戦（ちょうせん）しましょう！<br><br>※音が出ますのでご注意ください。</p>
+            <button class="btn-start" onclick="startGame()">ゲームスタート<br><span style="font-size: 14px">(開始遊戲)</span></button>
+        </div>
+
+        <!-- 遊戲進行畫面 -->
+        <div id="screen-game" class="screen">
+            <div class="status-bar">
+                <span id="progress-text">Q 1 / 5</span>
+                <span id="score-text">スコア: 0</span>
+            </div>
+            
+            <div class="hero-icon" id="question-icon">🏮</div>
+            <h2 id="question-text">質問がここに入ります</h2>
+            
+            <div id="options-container" style="width: 100%;">
+                <!-- 按鈕會由 JavaScript 動態生成 -->
+            </div>
+        </div>
+
+        <!-- 結果畫面 -->
+        <div id="screen-result" class="screen">
+            <div class="hero-icon" id="result-icon">🏆</div>
+            <h2>ゲーム終了！<br>(遊戲結束)</h2>
+            <p id="final-score" style="font-size: 28px; font-weight: bold; color: #c53030;">50 / 50 点</p>
+            <p id="result-message" style="margin-bottom: 40px;"></p>
+            <button class="btn-start" onclick="location.reload()">もう一度プレイ<br><span style="font-size: 14px">(再玩一次)</span></button>
+        </div>
+    </div>
+
+    <!-- 答題回饋浮層 -->
+    <div id="feedback-modal">
+        <div class="feedback-title" id="feedback-title">正解！</div>
+        <div class="feedback-desc" id="feedback-desc">解説がここに入ります。</div>
+        <button class="btn-next" onclick="nextQuestion()">次へ (下一題)</button>
     </div>
 </div>
 
 <script>
+    // 遊戲資料庫 (結合假名注音，適合學習者)
     const quizData = [
         {
-            question: "Q1. 玉山の標高（高さ）はどれくらいですか？",
-            options: ["3,952メートル", "3,860メートル", "3,500メートル", "4,000メートル"],
+            icon: "⛏️",
+            question: "九份は昔（むかし）、何の<ruby>採掘<rt>さいくつ</rt></ruby>で栄（さか）えた町ですか？",
+            options: ["金（きん）", "銀（ぎん）", "石炭（せきたん）", "銅（どう）"],
             answer: 0,
-            explanation: "正解：3,952メートル（玉山是臺灣及東北亞的第一高峰）"
+            explanation: "正解は「金（黃金）」です。九份早期因為採金業而繁榮，有「黃金山城」的美名。"
         },
         {
-            question: "Q2. 玉山は台湾のどのあたりに位置していますか？",
-            options: ["北部", "南部", "中部", "東部"],
+            icon: "🏮",
+            question: "九份の有名な赤い<ruby>提灯<rt>ちょうちん</rt></ruby>がある<ruby>階段<rt>かいだん</rt></ruby>の通りは何と言いますか？",
+            options: ["豎崎路（しゅきろ）", "基山街（きざんがい）", "軽便路（けいべんろ）", "汽車路（きしゃろ）"],
+            answer: 0,
+            explanation: "正解は「豎崎路」です。最具代表性的紅燈籠石階路就是豎崎路！"
+        },
+        {
+            icon: "🍠",
+            question: "九份の<ruby>名物<rt>めいぶつ</rt></ruby>スイーツ「芋圓（ユーユェン）」の主な材料（ざいりょう）は何ですか？",
+            options: ["チョコレート", "タロイモ（芋頭）", "チーズ", "りんご"],
+            answer: 1,
+            explanation: "正解は「タロイモ（芋頭）」です。QQ的芋圓是來九份必吃的傳統甜點。"
+        },
+        {
+            icon: "🚌",
+            question: "台北のランドマーク「台北101」から九份まで、バスで約どのくらいかかりますか？",
+            options: ["約10分", "歩いて行ける", "約1時間半", "約5時間"],
             answer: 2,
-            explanation: "正解：中部（玉山主峰座落於臺灣中部，橫跨南投縣、嘉義縣及高雄市）"
+            explanation: "正解は「約1時間半」です。從台北101一帶可以搭乘客運前往九份，非常方便！"
         },
         {
-            question: "Q3. 玉山の形が何に似ていることからその名前がつきましたか？",
-            options: ["刀の刃", "削り取られた玉（ぎょく）", "大きな屏風", "タケノコ"],
+            icon: "🍵",
+            question: "九份で景色（けしき）を見ながらお茶（ちゃ）を飲むお店を何と言いますか？",
+            options: ["コンビニ", "茶藝館（ちゃげいかん）", "映画館（えいがかん）", "居酒屋（いざかや）"],
             answer: 1,
-            explanation: "正解：削り取られた玉（峰巒積雪時遠望如玉石般純白，故得名）"
-        },
-        {
-            question: "Q4. 玉山国立公園でよく見られる代表的な台湾の固有種（動物）はどれですか？",
-            options: ["ホッキョクグマ", "タイワンカモシカ", "カンガルー", "ペンギン"],
-            answer: 1,
-            explanation: "正解：タイワンカモシカ（臺灣長鬃山羊是臺灣特有種動物）"
-        },
-        {
-            question: "Q5. 日本統治時代、玉山は別の名前で呼ばれていました。その名前は何ですか？",
-            options: ["新高山（にいたかやま）", "富士山", "阿里山", "モリソン山"],
-            answer: 0,
-            explanation: "正解：新高山（當時因高度超越日本本土的富士山而得名）"
-        },
-        {
-            question: "Q6. 玉山の主峰に登るための主な出発点（登山口）はどこですか？",
-            options: ["合歓山（ごうかんざん）", "阿里山（ありさん）", "太魯閣（タロコ）", "塔塔加（タタカ）"],
-            answer: 3,
-            explanation: "正解：塔塔加（前往玉山主峰最主要、最大眾化的登山口是塔塔加鞍部）"
-        },
-        {
-            question: "Q7. 玉山が属している山脈の名前は何ですか？",
-            options: ["中央山脈", "雪山山脈", "玉山山脈", "海岸山脈"],
-            answer: 2,
-            explanation: "正解：玉山山脈（玉山是玉山山脈的最高峰）"
-        },
-        {
-            question: "Q8. 台湾の登山家が目標とする「台湾百岳」の中で、玉山はランキング何位ですか？",
-            options: ["1位", "2位", "3位", "10位"],
-            answer: 0,
-            explanation: "正解：1位（玉山是臺灣百岳之首，也是第一高峰）"
-        },
-        {
-            question: "Q9. 現在、玉山主峰の山頂にある石碑には何と書かれていますか？",
-            options: ["台湾最高峰", "玉山主峰", "新高山", "アジア第一峰"],
-            answer: 1,
-            explanation: "正解：玉山主峰（山頂的石碑上刻有「玉山主峰」及海拔高度3952公尺）"
-        },
-        {
-            question: "Q10. 玉山は日本のどの山より高いことから「新高山」と名付けられましたか？",
-            options: ["槍ヶ岳", "阿蘇山", "筑波山", "富士山"],
-            answer: 3,
-            explanation: "正解：富士山（因為標高3952公尺，超過了日本最高峰富士山的3776公尺）"
+            explanation: "正解は「茶藝館」です。在茶藝館品茗賞海景，是九份最經典的體驗。"
         }
     ];
 
-    let currentQuestionIndex = 0;
+    let currentQIndex = 0;
     let score = 0;
+    const pointsPerQ = 20;
+    let audioCtx = null;
 
-    const questionText = document.getElementById("question-text");
-    const optionsContainer = document.getElementById("options-container");
-    const feedbackText = document.getElementById("feedback-text");
-    const nextBtn = document.getElementById("next-btn");
-    const progressText = document.getElementById("progress");
+    // 音效產生器 (Web Audio API)
+    function playSound(type) {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        if (type === 'correct') {
+            // 答對的清脆聲
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+            oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.5);
+        } else {
+            // 答錯的低沉聲
+            oscillator.type = 'triangle';
+            oscillator.frequency.setValueAtTime(300, audioCtx.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.3);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.3);
+        }
+    }
+
+    function switchScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    function startGame() {
+        // 初始化音效引擎（需要使用者互動觸發）
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        currentQIndex = 0;
+        score = 0;
+        loadQuestion();
+        switchScreen('screen-game');
+    }
 
     function loadQuestion() {
-        feedbackText.textContent = "";
-        nextBtn.style.display = "none";
+        const q = quizData[currentQIndex];
         
-        const currentQ = quizData[currentQuestionIndex];
-        progressText.textContent = `問題 ${currentQuestionIndex + 1} / ${quizData.length}`;
-        questionText.textContent = currentQ.question;
+        document.getElementById('progress-text').textContent = `問題 ${currentQIndex + 1} / ${quizData.length}`;
+        document.getElementById('score-text').textContent = `スコア: ${score}`;
+        document.getElementById('question-icon').textContent = q.icon;
+        document.getElementById('question-text').innerHTML = q.question;
         
-        optionsContainer.innerHTML = "";
-        currentQ.options.forEach((option, index) => {
-            const btn = document.createElement("button");
-            btn.classList.add("option-btn");
-            btn.textContent = option;
-            btn.onclick = () => selectAnswer(index, btn);
-            optionsContainer.appendChild(btn);
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = '';
+        
+        const labels = ['A', 'B', 'C', 'D'];
+        
+        q.options.forEach((optText, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<span class="badge">${labels[index]}</span> ${optText}`;
+            btn.onclick = () => checkAnswer(index, btn);
+            optContainer.appendChild(btn);
         });
     }
 
-    function selectAnswer(selectedIndex, selectedBtn) {
-        const currentQ = quizData[currentQuestionIndex];
-        const allButtons = optionsContainer.querySelectorAll(".option-btn");
+    function checkAnswer(selectedIndex, btnElement) {
+        // 鎖定所有按鈕
+        const buttons = document.querySelectorAll('.option-btn');
+        buttons.forEach(b => b.disabled = true);
         
-        // 禁用所有按鈕
-        allButtons.forEach(btn => btn.disabled = true);
+        const q = quizData[currentQIndex];
+        const isCorrect = (selectedIndex === q.answer);
+        
+        const modal = document.getElementById('feedback-modal');
+        const title = document.getElementById('feedback-title');
+        const desc = document.getElementById('feedback-desc');
 
-        if (selectedIndex === currentQ.answer) {
-            selectedBtn.classList.add("correct");
-            feedbackText.style.color = "#16a34a";
-            feedbackText.innerHTML = `正解！🎉<br><span style="font-size: 14px; font-weight: normal; color: #475569;">${currentQ.explanation}</span>`;
-            score++;
+        if (isCorrect) {
+            playSound('correct');
+            btnElement.classList.add('correct');
+            score += pointsPerQ;
+            document.getElementById('score-text').textContent = `スコア: ${score}`;
+            title.innerHTML = "⭕ 大正解！（答對了）";
+            title.style.color = "#38a169";
         } else {
-            selectedBtn.classList.add("wrong");
-            allButtons[currentQ.answer].classList.add("correct");
-            feedbackText.style.color = "#dc2626";
-            feedbackText.innerHTML = `不正解...❌<br><span style="font-size: 14px; font-weight: normal; color: #475569;">${currentQ.explanation}</span>`;
+            playSound('wrong');
+            btnElement.classList.add('wrong');
+            // 標示出正確答案
+            buttons[q.answer].classList.add('correct');
+            title.innerHTML = "❌ 殘念！（答錯囉）";
+            title.style.color = "#e53e3e";
         }
-
-        if (currentQuestionIndex < quizData.length - 1) {
-            nextBtn.style.display = "block";
-        } else {
-            nextBtn.style.display = "block";
-            nextBtn.textContent = "結果を見る (看結果)";
-            nextBtn.onclick = showResult;
-        }
+        
+        desc.innerHTML = q.explanation;
+        modal.classList.add('show');
     }
 
     function nextQuestion() {
-        currentQuestionIndex++;
-        loadQuestion();
+        document.getElementById('feedback-modal').classList.remove('show');
+        
+        currentQIndex++;
+        if (currentQIndex < quizData.length) {
+            // 延遲一點點讓浮層降下後再載入新題目
+            setTimeout(loadQuestion, 300);
+        } else {
+            setTimeout(showResult, 300);
+        }
     }
 
     function showResult() {
-        const container = document.getElementById("quiz-container");
-        let evaluation = "";
+        switchScreen('screen-result');
+        document.getElementById('final-score').textContent = `${score} / 100 点`;
         
-        // 根據10題的得分給予不同的評語
-        if (score === 10) {
-            evaluation = "完璧です！玉山マスターですね！<br>(太完美了！你是玉山達人！)";
-        } else if (score >= 7) {
-            evaluation = "素晴らしい！よくできました！<br>(做得很好！很厲害喔！)";
-        } else if (score >= 4) {
-            evaluation = "いい調子です！<br>(表現不錯！繼續保持！)";
+        const msg = document.getElementById('result-message');
+        const icon = document.getElementById('result-icon');
+        
+        if (score === 100) {
+            icon.textContent = "👑";
+            msg.innerHTML = "素晴らしい！台湾マスターですね！<br>（太完美了！你是台灣旅遊達人！）";
+        } else if (score >= 60) {
+            icon.textContent = "👏";
+            msg.innerHTML = "よくできました！九份に行きたくなりますね。<br>（表現得很好！是不是想去九份玩了呢？）";
         } else {
-            evaluation = "もう少し頑張りましょう！<br>(再接再厲！)";
+            icon.textContent = "💪";
+            msg.innerHTML = "もう少し頑張りましょう！<br>（再接再厲！多練習就會進步唷！）";
         }
-
-        container.innerHTML = `
-            <div class="score-board">
-                <h2>ゲーム終了 (遊戲結束)</h2>
-                <p>正解数 (答對題數)：${score} / ${quizData.length}</p>
-                <p style="font-size: 18px; color: #475569; margin-top: 15px; line-height: 1.5;">${evaluation}</p>
-                <button class="next-btn" style="display: block; margin-top: 20px;" onclick="location.reload()">もう一度プレイ (再玩一次)</button>
-            </div>
-        `;
     }
-
-    // 初始化遊戲
-    loadQuestion();
 </script>
 
 </body>
